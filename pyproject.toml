@@ -22,7 +22,6 @@ local = [
     "pathspec",
     "polars",
     "psycopg2-binary",
-    "fastapi",
     "setuptools",
     "wheel",
     "xlsxwriter",

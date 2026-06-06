@@ -319,7 +319,6 @@ cloud = [
 ]
 local = [
     { name = "duckdb" },
-    { name = "fastapi" },
     { name = "fastexcel" },
     { name = "great-expectations", marker = "python_full_version < '3.14'" },
     { name = "openpyxl" },
@@ -361,7 +360,6 @@ requires-dist = [
     { name = "awswrangler", marker = "extra == 'cloud'" },
     { name = "boto3", marker = "extra == 'cloud'" },
     { name = "duckdb", marker = "extra == 'local'" },
-    { name = "fastapi", marker = "extra == 'local'" },
     { name = "fastapi", marker = "extra == 'saas'" },
     { name = "fastexcel", marker = "extra == 'local'" },
     { name = "great-expectations", marker = "python_full_version < '3.14' and extra == 'local'" },

@@ -54,7 +54,7 @@ def sync_command(
 ) -> list[str]:
     command = uv_command_prefix(python_path) + ["sync"]
     if profile == "cloud":
-        command.extend(["--extra", "local", "--extra", "cloud"])
+        command.extend(["--extra", "local", "--extra", "cloud", "--extra", "saas"])
     if use_dev_dependencies:
         command.extend(["--group", "dev-local"])
         if profile == "cloud":

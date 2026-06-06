@@ -82,7 +82,7 @@ def install_command(manager: str, profile: str, paths: tuple[Path, ...]) -> list
     if manager == "uv":
         command = uv_command_prefix() + ["sync"]
         if profile == "cloud":
-            command.extend(["--extra", "local", "--extra", "cloud"])
+            command.extend(["--extra", "local", "--extra", "cloud", "--extra", "saas"])
         command.extend(["--group", "dev-local"])
         if profile == "cloud":
             command.extend(["--group", "dev-cloud"])

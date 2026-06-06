@@ -259,7 +259,7 @@ function Get-UvSyncArguments {
     $arguments = @("sync")
 
     if ($SelectedProfile -eq "cloud") {
-        $arguments += @("--extra", "local", "--extra", "cloud")
+        $arguments += @("--extra", "local", "--extra", "cloud", "--extra", "saas")
     }
 
     if ($UseDevDependencies) {
