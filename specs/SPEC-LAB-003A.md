@@ -65,6 +65,9 @@ project-root/
     ├── variables.tf
     ├── outputs.tf
     ├── terraform.tfvars.example
+    ├── env/                    # Credenciales AWS locales — nunca commitear
+    │   ├── .env.example        # Plantilla con placeholders (commiteado)
+    │   └── .env.credentials    # Credenciales reales (ignorado por git)
     └── modules/
         ├── ecr/
         │   ├── main.tf
@@ -95,6 +98,15 @@ project-root/
             ├── variables.tf
             └── outputs.tf
 ```
+
+> **`infra/env/`** — Directorio de credenciales AWS para ejecución local.
+>
+> | Archivo | Commiteado | Propósito |
+> |---------|-----------|-----------|
+> | `.env.example` | ✅ Sí | Plantilla con placeholders. Base para crear el archivo real. |
+> | `.env.credentials` | ❌ No | Credenciales reales. Debe estar en `.gitignore`. **Nunca commitear.** |
+>
+> Copiar `.env.example` a `.env.credentials` y reemplazar los valores antes de ejecutar cualquier comando AWS o Terraform.
 
 ---
 
