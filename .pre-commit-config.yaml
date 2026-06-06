@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+      # Refresh AI-generated repository context before each commit.
+      - id: ai-refresh
+        name: AI refresh
+        entry: python scripts/hooks/ai_refresh.py
+        language: python
+        additional_dependencies:
+          - pyyaml
+        pass_filenames: false
+        stages: [pre-commit]
+      # Sync the local environment when dependency definition files change.
+      # This template defaults to uv; the installer rewrites the args for pip hosts.
+      - id: sync-dependencies
+        name: Sync virtual environment dependencies
+        entry: python scripts/hooks/sync_dependencies.py
+        language: system
+        args: [--manager, uv]
+        files: ^(requirements(?:\.[A-Za-z0-9_-]+)?\.txt|pyproject\.toml|uv\.lock|\.template-profile)$
+        pass_filenames: false
