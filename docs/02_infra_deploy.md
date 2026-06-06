@@ -10,29 +10,43 @@ Ejecutar **después** de completar `01_backend_bootstrap.md`.
 
 ## Windows (PowerShell)
 
+### Paso 0 — Cargar credenciales AWS
+
+```powershell
+Get-Content infra\env\.env.credentials | ForEach-Object {
+  if ($_ -match "^\s*#" -or $_ -match "^\s*$") { return }
+
+  $name, $value = $_ -split "=", 2
+  [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), "Process")
+}
+
+# Verificar
+aws sts get-caller-identity
+```
+
 ### Paso 1 — Desplegar la infraestructura
 
 ```powershell
-# 1. Ir a infra/ guardando la ubicación actual
+# Ir a infra/ guardando la ubicación actual
 Push-Location infra
 
-# 2. Inicializar Terraform con el backend S3
+# Inicializar Terraform con el backend S3
 terraform init
 
-# 3. Revisar el plan completo
+# Revisar el plan completo
 terraform plan
 
-# 4. Aplicar (tarda ~2-4 min; crea el repositorio ECR entre otros recursos)
+# Aplicar (tarda ~2-4 min; crea el repositorio ECR entre otros recursos)
 terraform apply
 
-# 5. Ver los outputs del despliegue
+# Ver los outputs del despliegue
 terraform output
 
-# 6. Volver al directorio anterior
+# Volver al directorio anterior
 Pop-Location
 ```
 
-> Una vez completado este paso, el repositorio ECR ya existe.
+> Una vez completado, el repositorio ECR ya existe.
 > Continuar con **`01.5_docker_push.md`** para subir la imagen, luego volver al Paso 2.
 
 ---
@@ -42,18 +56,19 @@ Pop-Location
 ```powershell
 Push-Location infra
 
-# Estado del servicio ECS
+# Capturar outputs
 $CLUSTER   = terraform output -raw cluster_name
 $SERVICE   = terraform output -raw service_name
 $LOG_GROUP = terraform output -raw log_group_name
 
+# Estado del servicio ECS
 aws ecs describe-services `
   --cluster $CLUSTER `
   --services $SERVICE `
   --query "services[0].{Status:status,Running:runningCount,Desired:desiredCount}" `
   --output table
 
-# Logs de CloudWatch (últimas entradas)
+# Logs de CloudWatch en tiempo real
 aws logs tail $LOG_GROUP --follow
 
 Pop-Location
@@ -76,6 +91,13 @@ Ver `01.5_docker_push.md` — sección "Re-deploy".
 ### Cleanup
 
 ```powershell
+# Recargar credenciales si la sesión cambió
+Get-Content infra\env\.env.credentials | ForEach-Object {
+  if ($_ -match "^\s*#" -or $_ -match "^\s*$") { return }
+  $name, $value = $_ -split "=", 2
+  [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), "Process")
+}
+
 Push-Location infra
 # Tarda 3-7 min mientras ECS drena las tasks Fargate
 terraform destroy
@@ -86,25 +108,36 @@ Pop-Location
 
 ## Linux / macOS (bash)
 
+### Paso 0 — Cargar credenciales AWS
+
+```bash
+set -o allexport
+source <(grep -v '^\s*#' infra/env/.env.credentials | grep -v '^\s*$')
+set +o allexport
+
+# Verificar
+aws sts get-caller-identity
+```
+
 ### Paso 1 — Desplegar la infraestructura
 
 ```bash
-# 1. Ir a infra/ guardando la ubicación actual
+# Ir a infra/ guardando la ubicación actual
 pushd infra
 
-# 2. Inicializar Terraform con el backend S3
+# Inicializar Terraform con el backend S3
 terraform init
 
-# 3. Revisar el plan
+# Revisar el plan
 terraform plan
 
-# 4. Aplicar
+# Aplicar
 terraform apply
 
-# 5. Ver outputs
+# Ver outputs
 terraform output
 
-# 6. Volver al directorio anterior
+# Volver al directorio anterior
 popd
 ```
 
@@ -148,6 +181,10 @@ Ver `01.5_docker_push.md` — sección "Re-deploy".
 ### Cleanup
 
 ```bash
+set -o allexport
+source <(grep -v '^\s*#' infra/env/.env.credentials | grep -v '^\s*$')
+set +o allexport
+
 pushd infra
 terraform destroy   # tarda 3-7 min
 popd
@@ -159,9 +196,11 @@ popd
 
 ```
 01_backend_bootstrap   →  terraform apply  (backend-bootstrap/)
-02_infra_deploy        →  terraform apply  (infra/)              ← crea el repo ECR
-01.5_docker_push       →  docker build + push a ECR
-02_infra_deploy        →  verificar ECS service ACTIVE + task RUNNING
+02_infra_deploy        →  Paso 0: cargar credenciales
+                       →  Paso 1: terraform apply  (infra/)     ← crea el repo ECR
+01.5_docker_push       →  Paso 0: cargar credenciales
+                       →  Paso 1: docker build + push a ECR
+02_infra_deploy        →  Paso 2: verificar ECS service ACTIVE + task RUNNING
 ```
 
 ## Orden de cleanup

@@ -7,31 +7,49 @@ Ejecutar **una sola vez** antes de inicializar `infra/`.
 
 ## Windows (PowerShell)
 
+### Paso 0 — Cargar credenciales AWS
+
 ```powershell
-# 1. Ir a backend-bootstrap/ guardando la ubicación actual
+# Carga las variables de entorno desde infra/env/.env.credentials
+# Ignora líneas vacías y comentarios (#)
+Get-Content infra\env\.env.credentials | ForEach-Object {
+  if ($_ -match "^\s*#" -or $_ -match "^\s*$") { return }
+
+  $name, $value = $_ -split "=", 2
+  [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), "Process")
+}
+
+# Verificar que las credenciales están activas
+aws sts get-caller-identity
+```
+
+### Paso 1 — Crear el bucket S3
+
+```powershell
+# Ir a backend-bootstrap/ guardando la ubicación actual
 Push-Location backend-bootstrap
 
-# 2. Inicializar Terraform (estado local)
+# Inicializar Terraform (estado local)
 terraform init
 
-# 3. Revisar el plan
+# Revisar el plan
 terraform plan
 
-# 4. Crear el bucket S3
+# Crear el bucket S3
 terraform apply
 
-# 5. Capturar el nombre del bucket en una variable
+# Capturar el nombre del bucket en una variable
 $BUCKET_NAME = terraform output -raw bucket_name
 Write-Host "Bucket creado: $BUCKET_NAME"
 
-# 6. Reemplazar el placeholder en infra/backend.tf
+# Reemplazar el placeholder en infra/backend.tf
 (Get-Content ..\infra\backend.tf) `
   -replace 'REPLACE_WITH_BUCKET_NAME', $BUCKET_NAME |
   Set-Content ..\infra\backend.tf
 
 Write-Host "infra/backend.tf actualizado con: $BUCKET_NAME"
 
-# 7. Volver al directorio anterior
+# Volver al directorio anterior
 Pop-Location
 ```
 
@@ -39,29 +57,44 @@ Pop-Location
 
 ## Linux / macOS (bash)
 
+### Paso 0 — Cargar credenciales AWS
+
 ```bash
-# 1. Ir a backend-bootstrap/ guardando la ubicación actual
+# Carga las variables de entorno desde infra/env/.env.credentials
+# Ignora líneas vacías y comentarios (#)
+set -o allexport
+source <(grep -v '^\s*#' infra/env/.env.credentials | grep -v '^\s*$')
+set +o allexport
+
+# Verificar que las credenciales están activas
+aws sts get-caller-identity
+```
+
+### Paso 1 — Crear el bucket S3
+
+```bash
+# Ir a backend-bootstrap/ guardando la ubicación actual
 pushd backend-bootstrap
 
-# 2. Inicializar Terraform (estado local)
+# Inicializar Terraform (estado local)
 terraform init
 
-# 3. Revisar el plan
+# Revisar el plan
 terraform plan
 
-# 4. Crear el bucket S3
+# Crear el bucket S3
 terraform apply
 
-# 5. Capturar el nombre del bucket en una variable
+# Capturar el nombre del bucket en una variable
 BUCKET_NAME=$(terraform output -raw bucket_name)
 echo "Bucket creado: $BUCKET_NAME"
 
-# 6. Reemplazar el placeholder en infra/backend.tf
+# Reemplazar el placeholder en infra/backend.tf
 sed -i "s/REPLACE_WITH_BUCKET_NAME/$BUCKET_NAME/" ../infra/backend.tf
 
 echo "infra/backend.tf actualizado con: $BUCKET_NAME"
 
-# 7. Volver al directorio anterior
+# Volver al directorio anterior
 popd
 ```
 
@@ -73,17 +106,30 @@ popd
 - Versioning habilitado, SSE-S3 activo, block public access en todos los bloques.
 - `infra/backend.tf` con el nombre real del bucket (sin placeholder).
 
+---
+
 ## Cleanup del backend
 
 Solo ejecutar **después** de destruir la infraestructura principal (`infra/`):
 
 ```powershell
+# Recargar credenciales si la sesión cambió
+Get-Content infra\env\.env.credentials | ForEach-Object {
+  if ($_ -match "^\s*#" -or $_ -match "^\s*$") { return }
+  $name, $value = $_ -split "=", 2
+  [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), "Process")
+}
+
 Push-Location backend-bootstrap
 terraform destroy
 Pop-Location
 ```
 
 ```bash
+set -o allexport
+source <(grep -v '^\s*#' infra/env/.env.credentials | grep -v '^\s*$')
+set +o allexport
+
 pushd backend-bootstrap
 terraform destroy
 popd
